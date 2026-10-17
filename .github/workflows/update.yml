@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -27,13 +27,19 @@ jobs:
           INFO_FILE: ${{ runner.temp }}/info.md
         run: scripts/update.sh "${{ matrix.pkg }}"
 
-      - name: Bauen (bricht ab, wenn das Paket nicht baut)
+      - name: Änderungen prüfen
+        id: check
         run: |
-          if ! git diff --quiet; then
-            nix build ".#${{ matrix.pkg }}" --no-link -L
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Bauen
+        if: steps.check.outputs.changed == 'true'
+        run: nix build ".#${{ matrix.pkg }}" --no-link -L
+
       - name: Pull-Request öffnen
+        if: steps.check.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           branch: update/${{ matrix.pkg }}
