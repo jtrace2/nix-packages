@@ -39,6 +39,7 @@ tag_pattern='.*'
 case "$pkg" in
   faugus-launcher)
     mode="sed"; file="pkgs/faugus-launcher.nix"; repo="Faugus/faugus-launcher"
+    tag_pattern='^[0-9]+\.[0-9]+\.[0-9]+$'
     ;;
   proton-ge)
     mode="json"; file="pkgs/versions/proton-ge.json"; repo="GloriousEggroll/proton-ge-custom"
@@ -66,19 +67,23 @@ case "$pkg" in
     ;;
 esac
 
-release=$(api "https://api.github.com/repos/$repo/releases/latest")
-latest=$(jq -r .tag_name <<<"$release")
-published=$(jq -r '.published_at[:10]' <<<"$release")
+releases=$(api "https://api.github.com/repos/$repo/releases?per_page=30")
+release=$(jq -c --arg p "$tag_pattern" '
+  [.[] | select((.draft | not) and (.prerelease | not) and (.tag_name | test($p)))]
+  | .[0] // empty' <<<"$releases")
 
-if [ -z "$latest" ] || [ "$latest" = "null" ]; then
-  echo "Fehler: neueste Version konnte nicht gelesen werden." >&2
+if [ -z "$release" ]; then
+  echo "Fehler: keine stabile Version mit passendem Tag-Muster '$tag_pattern' gefunden." >&2
+  echo "Das Namensschema hat sich vermutlich geändert, bitte von Hand prüfen." >&2
   exit 1
 fi
 
-if ! echo "$latest" | grep -Eq "$tag_pattern"; then
-  echo "Fehler: Tag '$latest' passt nicht zum erwarteten Muster '$tag_pattern'." >&2
-  echo "Das Namensschema hat sich vermutlich geändert, bitte von Hand prüfen." >&2
-  exit 1
+latest=$(jq -r .tag_name <<<"$release")
+published=$(jq -r '.published_at[:10]' <<<"$release")
+
+newest_any=$(jq -r '.[0].tag_name' <<<"$releases")
+if [ "$newest_any" != "$latest" ]; then
+  echo "Hinweis: neueste Veröffentlichung '$newest_any' ist keine stabile Version und wird übersprungen."
 fi
 
 if [ "$mode" = "sed" ]; then
