@@ -1,38 +1,7 @@
 #!/usr/bin/env bash
-# Aktualisiert ein Paket auf die neueste stabile Upstream-Version.
-#
-# Aufruf:
-#   scripts/update.sh <paket>            faugus-launcher | proton-ge |
-#                                        proton-cachyos | proton-em | proton-kron4ek
-#   scripts/update.sh <paket> --check    nur prüfen, nichts ändern
-#
-# Faugus: Version und Hash werden in pkgs/faugus-launcher.nix ersetzt (nur die
-# neueste Version wird gehalten).
-#
-# Proton-Arten: pkgs/versions/<paket>.json enthält die behaltenen Versionen,
-# neueste zuerst. Das Skript ergänzt eine neue Version vorne und entfernt alte
-# Einträge nach dieser Regel (auch ohne neue Version):
-#   - behalten: alles, was in den letzten KEEP_DAYS Tagen erschienen ist,
-#   - aber mindestens MIN_KEEP Versionen (damit ein Zurück möglich bleibt),
-#   - und höchstens MAX_KEEP Versionen (damit der Speicher begrenzt bleibt).
-# Häufig aktualisierte Proton-Arten behalten so automatisch mehr Versionen,
-# selten aktualisierte weniger.
-#
-# Es wird nichts committet. Die GitHub-Action baut danach das Paket und öffnet
-# einen Pull-Request, der von Hand geprüft und gemergt wird.
-#
-# Ist INFO_FILE gesetzt, schreibt das Skript dort einen kurzen Text mit
-# Änderungen und Release-Notes-Link hin (wird als Pull-Request-Text benutzt).
-#
-# Voraussetzungen: curl, jq, nix. «releases/latest» liefert nur stabile
-# Releases, keine Vorabversionen. Passt ein Tag nicht zum erwarteten Muster
-# (zum Beispiel eine neue Hauptversion mit anderem Namensschema), bricht das
-# Skript ab, statt eine unbekannte Datei zu holen.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# jq und curl fehlen auf manchen Systemen: dann das Skript einmal mit beiden
-# Werkzeugen aus Nix neu starten.
 if ! command -v jq >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
   exec nix shell nixpkgs#jq nixpkgs#curl --command "$0" "$@"
 fi
@@ -112,7 +81,6 @@ if ! echo "$latest" | grep -Eq "$tag_pattern"; then
   exit 1
 fi
 
-# ---------------------------------------------------------------- Faugus
 if [ "$mode" = "sed" ]; then
   current=$(sed -n 's/^ *version = "\(.*\)";/\1/p' "$file" | head -n1)
   echo "$pkg: aktuell $current, neueste stabile $latest"
@@ -129,7 +97,6 @@ if [ "$mode" = "sed" ]; then
   exit 0
 fi
 
-# ---------------------------------------------------------------- Proton
 data=$(cat "$file")
 is_new=$(jq -r --arg t "$latest" 'map(select(.tag == $t)) | length' <<<"$data")
 cutoff=$(date -d "-$KEEP_DAYS days" +%F)

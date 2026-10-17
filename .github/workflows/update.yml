@@ -1,8 +1,5 @@
 name: Pakete aktualisieren
 
-# Prüft täglich, ob es neue stabile Versionen gibt. Pro Paket entsteht bei einer
-# neuen Version ein Pull-Request, aber nur, wenn das Paket gebaut werden kann.
-# Gemergt wird immer von Hand (nach Release-Notes-Check).
 on:
   schedule:
     - cron: "17 5 * * *"
@@ -22,7 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Upstream-Nix, kein Determinate Nix (siehe Exit-Strategie).
       - uses: cachix/install-nix-action@v31
 
       - name: Neue Version holen

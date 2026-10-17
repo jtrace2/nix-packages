@@ -21,13 +21,6 @@
   xdg-utils,
 }:
 
-# Eigenes Paket statt overrideAttrs auf nixpkgs (2026-10): nixpkgs hing bei 2.3.0,
-# Upstream war weiter. Vorlage: pkgs/by-name/fa/faugus-launcher/package.nix.
-# Neue Version: scripts/update.sh faugus-launcher (läuft auch täglich in der
-# GitHub-Action und öffnet einen Pull-Request). Version und Hash stehen je in
-# einer eigenen Zeile, damit das Skript sie ersetzen kann. Bricht der Build
-# wegen einer neuen Abhängigkeit, wird sie unten in der jeweiligen Liste
-# ergänzt.
 python3Packages.buildPythonApplication (finalAttrs: {
   pname = "faugus-launcher";
   version = "2.5.0";
@@ -95,7 +88,6 @@ python3Packages.buildPythonApplication (finalAttrs: {
     )
   '';
 
-  # Keine Tests vorhanden
   doCheck = false;
 
   pythonImportsCheck = [ "faugus" ];
