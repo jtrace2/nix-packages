@@ -1,0 +1,11 @@
+# Von «nix build» erzeugte Verknüpfungen
+result
+result-*
+
+# direnv und Editor-Reste
+.direnv/
+.envrc.local
+*.swp
+*~
+.vscode/
+.idea/

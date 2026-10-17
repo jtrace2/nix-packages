@@ -1,0 +1,47 @@
+name: Pakete aktualisieren
+
+# Prüft täglich, ob es neue stabile Versionen gibt. Pro Paket entsteht bei einer
+# neuen Version ein Pull-Request, aber nur, wenn das Paket gebaut werden kann.
+# Gemergt wird immer von Hand (nach Release-Notes-Check).
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg: [faugus-launcher, proton-ge, proton-cachyos, proton-em, proton-kron4ek]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Upstream-Nix, kein Determinate Nix (siehe Exit-Strategie).
+      - uses: cachix/install-nix-action@v31
+
+      - name: Neue Version holen
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INFO_FILE: ${{ runner.temp }}/info.md
+        run: scripts/update.sh "${{ matrix.pkg }}"
+
+      - name: Bauen (bricht ab, wenn das Paket nicht baut)
+        run: |
+          if ! git diff --quiet; then
+            nix build ".#${{ matrix.pkg }}" --no-link -L
+          fi
+
+      - name: Pull-Request öffnen
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: update/${{ matrix.pkg }}
+          title: "${{ matrix.pkg }}: neue Version"
+          commit-message: "${{ matrix.pkg }}: neue Version"
+          body-path: ${{ runner.temp }}/info.md
+          delete-branch: true
