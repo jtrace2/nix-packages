@@ -40,11 +40,23 @@ Lokal bauen:
 nix build .#faugus-launcher
 ```
 
+## Behaltene Versionen (Proton)
+
+Bei den Proton-Arten stehen mehrere Versionen in `pkgs/versions/<paket>.json`, neueste zuerst. Das Skript entfernt alte nach dieser Regel:
+
+- alles behalten, was in den letzten 60 Tage erschienen ist,
+- aber mindestens 2 Versionen (damit ein Zurück möglich bleibt),
+- und höchstens 6 Versionen (damit der Speicher begrenzt bleibt).
+
+Häufig aktualisierte Proton-Arten behalten so von selbst mehr Versionen, selten aktualisierte weniger. Die Werte lassen sich mit `KEEP_DAYS`, `MIN_KEEP` und `MAX_KEEP` ändern.
+
+Alle behaltenen Versionen stehen unter `lib.protonVersions` (je Art `newest` und `all`, wobei `all` ein Satz aus Verzeichnisname und Paket ist, zum Beispiel für `compatibilitytools.d`).
+
 ## Aufbau
 
 - `flake.nix`: Ausgaben (`packages`, `overlays.default`, `lib.customPackages`).
-- `pkgs/`: je eine Datei pro Paket, `default.nix` fasst sie zusammen.
-- `scripts/update.sh`: holt die neueste stabile Version und setzt Version oder Tag und Hash.
+- `pkgs/`: `default.nix` (neueste Version je Paket), `proton-versions.nix` (alle Proton-Versionen), `versions/*.json` (Versionslisten), `faugus-launcher.nix`.
+- `scripts/update.sh`: holt die neueste stabile Version, trägt sie ein und entfernt alte Proton-Versionen.
 - `.github/workflows/update.yml`: täglicher Lauf, pro Paket ein Pull-Request.
 
 ## Ablauf bei einer neuen Version

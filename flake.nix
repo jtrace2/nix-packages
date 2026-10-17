@@ -18,6 +18,10 @@
       # Personal-Repo ({ pkgs, lib }: { ... }), damit der Umstieg klein bleibt.
       lib.customPackages = import ./pkgs;
 
+      # Alle behaltenen Proton-Versionen: { proton-ge = { newest; all; }; ... },
+      # «all» ist ein Satz aus Verzeichnisname und Paket.
+      lib.protonVersions = import ./pkgs/proton-versions.nix;
+
       # Für die CI und zum Ausprobieren: nix build .#faugus-launcher
       packages.${system} = import ./pkgs { inherit pkgs lib; };
 
