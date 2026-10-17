@@ -45,7 +45,7 @@ case "$pkg" in
   proton-cachyos)
     file="pkgs/proton-cachyos.nix"; repo="CachyOS/proton-cachyos"; field="tag"
     tag_pattern='^cachyos-[0-9.]+-[0-9]{8}-slr$'
-    asset() { echo "https://github.com/$repo/releases/download/$1/proton-$1-x86_64_v3.tar.xz"; }
+    asset() { echo "https://github.com/$repo/releases/download/$1/proton-$1-x86_64.tar.xz"; }
     ;;
   proton-em)
     file="pkgs/proton-em.nix"; repo="Etaash-mathamsetty/Proton"; field="tag"

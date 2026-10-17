@@ -8,7 +8,7 @@ Eigene Nix-Pakete, die schneller aktuell sind als nixpkgs. Eine tägliche GitHub
 | --- | --- |
 | `faugus-launcher` | [Faugus/faugus-launcher](https://github.com/Faugus/faugus-launcher) |
 | `proton-ge` | [GloriousEggroll/proton-ge-custom](https://github.com/GloriousEggroll/proton-ge-custom) |
-| `proton-cachyos` | [CachyOS/proton-cachyos](https://github.com/CachyOS/proton-cachyos) (Variante x86_64_v3) |
+| `proton-cachyos` | [CachyOS/proton-cachyos](https://github.com/CachyOS/proton-cachyos) (allgemeiner x86_64-Build) |
 | `proton-em` | [Etaash-mathamsetty/Proton](https://github.com/Etaash-mathamsetty/Proton) |
 | `proton-kron4ek` | [Kron4ek/Wine-Builds](https://github.com/Kron4ek/Wine-Builds) (wow64, ohne Staging) |
 
