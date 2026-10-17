@@ -10,7 +10,7 @@ KEEP_DAYS="${KEEP_DAYS:-60}"
 MIN_KEEP="${MIN_KEEP:-2}"
 MAX_KEEP="${MAX_KEEP:-6}"
 
-pkg="${1:?Paketname angeben, siehe Kopf der Datei}"
+pkg="${1:?usage: scripts/update.sh <package> [--check]}"
 check_only="${2:-}"
 
 api() {
@@ -24,14 +24,14 @@ api() {
 write_info() {
   [ -n "${INFO_FILE:-}" ] || return 0
   {
-    echo "Automatisches Update von **$pkg**."
+    echo "Automatic update of **$pkg**."
     echo
-    [ -n "$1" ] && echo "- Neu: \`$1\`"
-    [ -n "$2" ] && echo "- Entfernt (älter als $KEEP_DAYS Tage, über dem Minimum): \`$2\`"
+    [ -n "$1" ] && echo "- Added: \`$1\`"
+    [ -n "$2" ] && echo "- Removed (older than $KEEP_DAYS days, above the minimum): \`$2\`"
     echo
-    echo "Release-Notes: https://github.com/$repo/releases/tag/$latest"
+    echo "Release notes: https://github.com/$repo/releases/tag/$latest"
     echo
-    echo "Vor dem Mergen die Release-Notes lesen. Der Bau ist in der CI geprüft."
+    echo "Read the release notes before merging. The build was verified in CI."
   } > "$INFO_FILE"
 }
 
@@ -62,7 +62,7 @@ case "$pkg" in
     asset() { echo "https://github.com/$repo/releases/download/$1/wine-$1-amd64-wow64.tar.xz"; }
     ;;
   *)
-    echo "Unbekanntes Paket: $pkg" >&2
+    echo "Unknown package: $pkg" >&2
     exit 1
     ;;
 esac
@@ -73,8 +73,8 @@ release=$(jq -c --arg p "$tag_pattern" '
   | .[0] // empty' <<<"$releases")
 
 if [ -z "$release" ]; then
-  echo "Fehler: keine stabile Version mit passendem Tag-Muster '$tag_pattern' gefunden." >&2
-  echo "Das Namensschema hat sich vermutlich geändert, bitte von Hand prüfen." >&2
+  echo "Error: no stable release matching the tag pattern '$tag_pattern' found." >&2
+  echo "The naming scheme has probably changed, please check by hand." >&2
   exit 1
 fi
 
@@ -83,21 +83,21 @@ published=$(jq -r '.published_at[:10]' <<<"$release")
 
 newest_any=$(jq -r '.[0].tag_name' <<<"$releases")
 if [ "$newest_any" != "$latest" ]; then
-  echo "Hinweis: neueste Veröffentlichung '$newest_any' ist keine stabile Version und wird übersprungen."
+  echo "Note: newest release '$newest_any' is not a stable release and is skipped."
 fi
 
 if [ "$mode" = "sed" ]; then
   current=$(sed -n 's/^ *version = "\(.*\)";/\1/p' "$file" | head -n1)
-  echo "$pkg: aktuell $current, neueste stabile $latest"
-  [ "$current" != "$latest" ] || { echo "Nichts zu tun."; exit 0; }
+  echo "$pkg: current $current, newest stable $latest"
+  [ "$current" != "$latest" ] || { echo "Nothing to do."; exit 0; }
   [ "$check_only" != "--check" ] || exit 0
 
   hash=$(nix flake prefetch --json "github:$repo/$latest" | jq -r .hash)
-  case "$hash" in sha256-*) ;; *) echo "Fehler: ungültiger Hash '$hash'." >&2; exit 1 ;; esac
+  case "$hash" in sha256-*) ;; *) echo "Error: invalid hash '$hash'." >&2; exit 1 ;; esac
 
   sed -i "s|^\( *\)version = \".*\";|\1version = \"$latest\";|" "$file"
   sed -i "s|^\( *\)hash = \".*\";|\1hash = \"$hash\";|" "$file"
-  echo "Aktualisiert: $current -> $latest ($hash)"
+  echo "Updated: $current -> $latest ($hash)"
   write_info "$latest" ""
   exit 0
 fi
@@ -117,20 +117,20 @@ prune() {
 added=""
 if [ "$is_new" = "0" ]; then
   added="$latest"
-  echo "$pkg: neue Version $latest ($published)"
+  echo "$pkg: new version $latest ($published)"
   if [ "$check_only" != "--check" ]; then
     hash=$(nix store prefetch-file --json "$(asset "$latest")" | jq -r .hash)
-    case "$hash" in sha256-*) ;; *) echo "Fehler: ungültiger Hash '$hash'." >&2; exit 1 ;; esac
+    case "$hash" in sha256-*) ;; *) echo "Error: invalid hash '$hash'." >&2; exit 1 ;; esac
     data=$(jq --arg t "$latest" --arg d "$published" --arg h "$hash" \
       '[{tag: $t, date: $d, hash: $h}] + .' <<<"$data")
   fi
 else
-  echo "$pkg: $latest ist schon eingetragen."
+  echo "$pkg: $latest is already recorded."
 fi
 
 result=$(prune "$data")
 removed=$(jq -nr --argjson a "$data" --argjson b "$result" '([$a[].tag] - [$b[].tag]) | join(", ")')
-[ -z "$removed" ] || echo "$pkg: entfernt wird/werden: $removed"
+[ -z "$removed" ] || echo "$pkg: will remove: $removed"
 
 if [ "$check_only" = "--check" ]; then
   exit 0
@@ -140,9 +140,9 @@ tmp=$(mktemp)
 jq --indent 2 . <<<"$result" > "$tmp"
 if cmp -s "$tmp" "$file"; then
   rm -f "$tmp"
-  echo "Nichts zu tun."
+  echo "Nothing to do."
   exit 0
 fi
 mv "$tmp" "$file"
-echo "Aktualisiert: $file"
+echo "Updated: $file"
 write_info "$added" "$removed"

@@ -1,83 +1,84 @@
 # nix-packages
 
-Eigene Nix-Pakete, die schneller aktuell sind als nixpkgs. Eine tägliche GitHub-Action prüft auf neue Versionen, baut sie und öffnet einen Pull-Request.
+Nix packages that stay current faster than nixpkgs. A daily GitHub Action checks for new upstream versions, builds them, and opens a pull request.
 
-## Pakete
+## Packages
 
-| Paket | Quelle |
+| Package | Upstream |
 | --- | --- |
 | `faugus-launcher` | [Faugus/faugus-launcher](https://github.com/Faugus/faugus-launcher) |
 | `proton-ge` | [GloriousEggroll/proton-ge-custom](https://github.com/GloriousEggroll/proton-ge-custom) |
-| `proton-cachyos` | [CachyOS/proton-cachyos](https://github.com/CachyOS/proton-cachyos) (allgemeiner x86_64-Build) |
+| `proton-cachyos` | [CachyOS/proton-cachyos](https://github.com/CachyOS/proton-cachyos) (generic x86_64 build) |
 | `proton-em` | [Etaash-mathamsetty/Proton](https://github.com/Etaash-mathamsetty/Proton) |
-| `proton-kron4ek` | [Kron4ek/Wine-Builds](https://github.com/Kron4ek/Wine-Builds) (wow64, ohne Staging) |
+| `proton-kron4ek` | [Kron4ek/Wine-Builds](https://github.com/Kron4ek/Wine-Builds) (wow64, no Staging) |
 
-Faugus braucht `lsfg-vk`, das eine unfreie Lizenz hat. Das Flake erlaubt nur dieses eine Paket.
+Faugus depends on `lsfg-vk`, which has an unfree license. The flake allows only that one package.
 
-## Benutzen
+## Usage
 
-Als Flake-Input:
+As a flake input:
 
 ```nix
 inputs.nix-packages.url = "github:jtrace2/nix-packages";
 ```
 
-Als Overlay (Pakete mit den `pkgs` des eigenen Systems bauen):
+As an overlay (builds the packages with your system's `pkgs`):
 
 ```nix
 nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
 ```
 
-Oder die Pakete direkt aufrufen, mit der gleichen Schnittstelle wie ein `custom-packages.nix`:
+Or call the packages directly, with the same interface as a `custom-packages.nix`:
 
 ```nix
 inputs.nix-packages.lib.customPackages { inherit pkgs lib; }
 ```
 
-Lokal bauen:
+Build locally:
 
 ```
 nix build .#faugus-launcher
 ```
 
-## Behaltene Versionen (Proton)
+## Retained versions (Proton)
 
-Bei den Proton-Arten stehen mehrere Versionen in `pkgs/versions/<paket>.json`, neueste zuerst. Das Skript entfernt alte nach dieser Regel:
+Each Proton flavor keeps several versions in `pkgs/versions/<package>.json`, newest first. The update script removes old ones by this rule:
 
-- alles behalten, was in den letzten 60 Tage erschienen ist,
-- aber mindestens 2 Versionen (damit ein Zurück möglich bleibt),
-- und höchstens 6 Versionen (damit der Speicher begrenzt bleibt).
+- keep everything released in the last 60 days,
+- but at least 2 versions, so a rollback stays possible,
+- and at most 6 versions, to keep disk usage bounded.
 
-Häufig aktualisierte Proton-Arten behalten so von selbst mehr Versionen, selten aktualisierte weniger. Die Werte lassen sich mit `KEEP_DAYS`, `MIN_KEEP` und `MAX_KEEP` ändern.
+Flavors that release often keep more versions this way, rarely updated ones keep fewer. Change the values with `KEEP_DAYS`, `MIN_KEEP` and `MAX_KEEP`.
 
-Alle behaltenen Versionen stehen unter `lib.protonVersions` (je Art `newest` und `all`, wobei `all` ein Satz aus Verzeichnisname und Paket ist, zum Beispiel für `compatibilitytools.d`).
+All retained versions are available as `lib.protonVersions`. Each flavor has `newest` and `all`, where `all` is a set of directory name to package (for example for `compatibilitytools.d`).
 
-## Aufbau
+## Layout
 
-- `flake.nix`: Ausgaben (`packages`, `overlays.default`, `lib.customPackages`).
-- `pkgs/`: `default.nix` (neueste Version je Paket), `proton-versions.nix` (alle Proton-Versionen), `versions/*.json` (Versionslisten), `faugus-launcher.nix`.
-- `scripts/update.sh`: holt die neueste stabile Version, trägt sie ein und entfernt alte Proton-Versionen.
-- `.github/workflows/update.yml`: täglicher Lauf, pro Paket ein Pull-Request.
+- `flake.nix`: outputs (`packages`, `overlays.default`, `lib.customPackages`, `lib.protonVersions`).
+- `pkgs/`: `default.nix` (newest version of each package), `proton-versions.nix` (all Proton versions), `versions/*.json` (version lists), `faugus-launcher.nix`.
+- `scripts/update.sh`: fetches the newest stable version, records it, and drops old Proton versions.
+- `.github/workflows/update.yml`: daily run, one pull request per package.
 
-## Ablauf bei einer neuen Version
+## Flow for a new version
 
-1. Die Action erkennt eine neue stabile Version und trägt sie ein.
-2. Das Paket wird gebaut. Nur bei Erfolg entsteht ein Pull-Request.
-3. Release-Notes lesen, Pull-Request von Hand mergen. Es gibt keinen Automerge.
-4. Im eigenen System das Flake aktualisieren (`nix flake update nix-packages`). Erst dann kommt die neue Version auf das System.
+1. The action detects a new stable release and records it.
+2. The package is built. Only on success a pull request is opened.
+3. Read the release notes and merge the pull request by hand. There is no automerge.
+4. In your own system, update the flake (`nix flake update nix-packages`). Only then does the new version reach the system.
 
-Einzeln prüfen, ohne etwas zu ändern:
+Check a single package without changing anything:
 
 ```
 scripts/update.sh faugus-launcher --check
 ```
 
-## Hinweise
+## Notes
 
-- Das Repo enthält keine Zugangsdaten und keine privaten Daten.
-- Weicht ein Tag vom erwarteten Namensmuster ab, bricht das Skript ab, statt eine unbekannte Datei zu holen.
-- Das Repo lässt sich jederzeit zu einem anderen Anbieter verschieben, die Pakete sind reine Nix-Dateien.
+- The repository contains no credentials and no private data.
+- Only stable releases are picked up. Releases marked as pre-release, drafts, and tags that do not match the expected naming pattern are skipped.
+- If no stable release matches the pattern, the script stops with an error instead of fetching an unknown file.
+- The packages are plain Nix files, so the repository can move to another host at any time.
 
-## Lizenz
+## License
 
-Die Paketdefinitionen in diesem Repo stehen unter der MIT-Lizenz (siehe `LICENSE`). Die gepackte Software behält ihre eigene Lizenz.
+The package definitions in this repository are licensed under the MIT license (see `LICENSE`). The packaged software keeps its own license.

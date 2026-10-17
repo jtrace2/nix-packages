@@ -1,5 +1,5 @@
 {
-  description = "Eigene Nix-Pakete (Faugus, Proton-Builds), automatisch aktuell gehalten";
+  description = "Nix packages for Faugus and Proton builds, kept current automatically";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 

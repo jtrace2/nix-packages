@@ -1,4 +1,4 @@
-name: Pakete aktualisieren
+name: Update packages
 
 on:
   schedule:
@@ -21,29 +21,29 @@ jobs:
 
       - uses: cachix/install-nix-action@v31
 
-      - name: Neue Version holen
+      - name: Fetch new version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INFO_FILE: ${{ runner.temp }}/info.md
         run: scripts/update.sh "${{ matrix.pkg }}"
 
-      - name: Änderungen prüfen
+      - name: Check for changes
         id: check
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bauen
+      - name: Build
         if: steps.check.outputs.changed == 'true'
         run: nix build ".#${{ matrix.pkg }}" --no-link -L
 
-      - name: Pull-Request öffnen
+      - name: Open pull request
         if: steps.check.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           branch: update/${{ matrix.pkg }}
-          title: "${{ matrix.pkg }}: neue Version"
-          commit-message: "${{ matrix.pkg }}: neue Version"
+          title: "${{ matrix.pkg }}: new version"
+          commit-message: "${{ matrix.pkg }}: new version"
           body-path: ${{ runner.temp }}/info.md
           delete-branch: true
