@@ -1,5 +1,10 @@
 [
   {
+    "tag": "GE-Proton11-9",
+    "date": "2026-10-14",
+    "hash": "sha256-ss9KYypw7DIc25kE+jlqKkXUBhEp+f3InYon6lzuudY="
+  },
+  {
     "tag": "GE-Proton11-7",
     "date": "2026-10-17",
     "hash": "sha256-xUSLdqIwOE4te8a+tcy5e6+34sO2xSfLA6GlRrvLAKA="
