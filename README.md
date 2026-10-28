@@ -57,14 +57,16 @@ All retained versions are available as `lib.protonVersions`. Each flavor has `ne
 - `flake.nix`: outputs (`packages`, `overlays.default`, `lib.customPackages`, `lib.protonVersions`).
 - `pkgs/`: `default.nix` (newest version of each package), `proton-versions.nix` (all Proton versions), `versions/*.json` (version lists), `faugus-launcher.nix`.
 - `scripts/update.sh`: fetches the newest stable version, records it, and drops old Proton versions.
-- `.github/workflows/update.yml`: daily run, one pull request per package.
+- `.github/workflows/update.yml`: daily run, one pull request per package, merged automatically after a successful build.
 
 ## Flow for a new version
 
 1. The action detects a new stable release and records it.
 2. The package is built. Only on success a pull request is opened.
-3. Read the release notes and merge the pull request by hand. There is no automerge.
-4. In your own system, update the flake (`nix flake update nix-packages`). Only then does the new version reach the system.
+3. The pull request is merged automatically (squash) right after the build passed. A failed build never reaches `main`.
+4. In your own system, update the flake (`nix flake update nix-packages`). This step stays manual: only then does the new version reach the system, so `main` can move ahead without touching your machines.
+
+Automerge needs the repository setting "Allow GitHub Actions to create and approve pull requests" (Settings, Actions, General). Read the release notes of an update before you run the flake update.
 
 Check a single package without changing anything:
 
