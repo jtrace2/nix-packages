@@ -1,5 +1,10 @@
 [
   {
+    "tag": "11.21",
+    "date": "2026-10-31",
+    "hash": "sha256-M/PFtWsd649nJVOeoAbye114GztK5qih9JLYr0+53IM="
+  },
+  {
     "tag": "11.20",
     "date": "2026-10-18",
     "hash": "sha256-SCpJPHVdzqd2GZuGVg4PsPlpuwJ1xn2IEgsLNbDfNLk="
