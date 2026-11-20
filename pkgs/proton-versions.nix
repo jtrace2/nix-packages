@@ -48,17 +48,24 @@ in
   proton-kron4ek = mkSet {
     file = ./versions/proton-kron4ek.json;
     dirName = e: "wine-kron4ek-${e.tag}-wow64";
-    build = e: (mkProton {
-      pname = "wine-kron4ek";
-      version = "${e.tag}-amd64-wow64";
-      url = "https://github.com/Kron4ek/Wine-Builds/releases/download/${e.tag}/wine-${e.tag}-amd64-wow64.tar.xz";
-      inherit (e) hash;
-    }).overrideAttrs (_old: {
-      installPhase = ''
+    # Wine braucht zusaetzlich «files -> .». Der Archiv-Baum bleibt unveraendert
+    # (Fixed-Output), dieser Mini-Wrapper setzt nur Symlinks (kein Kopieren,
+    # Millisekunden) und haengt deshalb nicht von einem grossen Neubau ab.
+    build = e:
+      let
+        tree = mkProton {
+          pname = "wine-kron4ek";
+          version = "${e.tag}-amd64-wow64";
+          url = "https://github.com/Kron4ek/Wine-Builds/releases/download/${e.tag}/wine-${e.tag}-amd64-wow64.tar.xz";
+          inherit (e) hash;
+        };
+      in
+      pkgs.runCommandLocal "wine-kron4ek-${e.tag}-amd64-wow64" { } ''
         mkdir -p $out
-        cp -r . $out
+        for f in ${tree}/*; do
+          ln -s "$f" "$out/$(basename "$f")"
+        done
         ln -s . $out/files
       '';
-    });
   };
 }

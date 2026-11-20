@@ -119,7 +119,7 @@ if [ "$is_new" = "0" ]; then
   added="$latest"
   echo "$pkg: new version $latest ($published)"
   if [ "$check_only" != "--check" ]; then
-    hash=$(nix store prefetch-file --json "$(asset "$latest")" | jq -r .hash)
+    hash=$(nix store prefetch-file --json --unpack "$(asset "$latest")" | jq -r .hash)
     case "$hash" in sha256-*) ;; *) echo "Error: invalid hash '$hash'." >&2; exit 1 ;; esac
     data=$(jq --arg t "$latest" --arg d "$published" --arg h "$hash" \
       '[{tag: $t, date: $d, hash: $h}] + .' <<<"$data")
